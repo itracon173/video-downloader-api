@@ -13,20 +13,19 @@ def download_video():
     output_filename = "downloaded_video.mp4"
     
     try:
-        # সার্ভারে ফাইল সরাসরি ডাউনলোড করার কমান্ড (ইউটিউব এবং ফেসবুক উভয়ের জন্য)
+        # ইউটিউব এবং ফেসবুক উভয়টির জন্য ব্রাউজার ইউজার-এজেন্ট সহ কমান্ড
         command = [
             'yt-dlp',
             '--no-check-certificates',
+            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             '-f', 'best[ext=mp4]/best',
             '-o', output_filename,
             video_url
         ]
         
-        # প্রসেস রান করা
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         
         if os.path.exists(output_filename):
-            # ফাইল সফলভাবে ডাউনলোড হলে ইউজারের কাছে পাঠিয়ে দেওয়া এবং পাঠানো শেষ হলে মুছে ফেলা
             response = send_file(output_filename, as_attachment=True)
             return response
         else:
