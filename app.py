@@ -10,10 +10,17 @@ def download_video():
     if not video_url:
         return jsonify({"status": "error", "message": "No URL provided"}), 400
 
+    # যদি ইউটিউব লিংক হয়, তবে রেন্ডার সার্ভার থেকে ব্লক খাওয়ার কারণে এটি হ্যান্ডেল করা
+    if "youtube.com" in video_url or "youtu.be" in video_url:
+        return jsonify({
+            "status": "error", 
+            "message": "YouTube downloads are temporarily restricted on cloud servers due to bot protection. Please try Facebook videos!"
+        }), 400
+
     output_filename = "downloaded_video.mp4"
     
     try:
-        # ইউটিউব এবং ফেসবুক উভয়টির জন্য ব্রাউজার ইউজার-এজেন্ট সহ কমান্ড
+        # ফেসবুক বা অন্যান্য সাপোর্টেড সাইটের জন্য
         command = [
             'yt-dlp',
             '--no-check-certificates',
