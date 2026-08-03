@@ -11,10 +11,11 @@ def get_video_link():
 
     try:
         # ইউটিউব এবং ফেসবুক উভয়ের জন্য বেস্ট এমপিফোর ফরম্যাট লিংক বের করার কমান্ড
+   
         command = [
             'yt-dlp', 
             '--no-check-certificates',
-            '-f', 'best[ext=mp4]/best', 
+            '-f', 'bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / b', 
             '-g', 
             video_url
         ]
