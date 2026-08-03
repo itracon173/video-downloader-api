@@ -7,30 +7,34 @@ app = Flask(__name__)
 def get_video_link():
     video_url = request.args.get('url')
     if not video_url:
-        return jsonify({"error": "No URL provided"}), 400
+        return jsonify({"status": "error", "message": "No URL provided"}), 400
 
     try:
-        # এখানে -f দিয়ে ভিডিও এবং অডিও একসাথে কম্বাইন করার ফরম্যাট বলে দেওয়া হয়েছে
-        # এবং -g এর মাধ্যমে ডিরেক্ট স্ট্রিম লিংক ফেচ করা হচ্ছে
+        # ইউটিউব এবং ফেসবুক উভয়ের জন্য বেস্ট এমপিফোর ফরম্যাট লিংক বের করার কমান্ড
         command = [
             'yt-dlp', 
-            '-f', 'bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]', 
+            '--no-check-certificates',
+            '-f', 'best[ext=mp4]/best', 
             '-g', 
             video_url
         ]
         
         result = subprocess.run(command, capture_output=True, text=True, check=True)
         
-        # yt-dlp কখনো কখনো ভিডিও ও অডিওর আলাদা দুটি লিংক দেয় (প্রথমটা ভিডিও, দ্বিতীয়টা অডিও)
-        # তবে ক্লাউড সার্ভারে ffmpeg না থাকলে মার্জ করা সম্ভব হয় না। 
-        # তাই সরাসরি সেরা সিঙ্গেল ফাইল বা কম্বাইন্ড লিংক নেওয়ার জন্য নিচে হ্যান্ডেল করা হলো:
         links = result.stdout.strip().split('\n')
-        direct_link = links[0] # প্রাইমারি লিংক
+        if not links or not links[0]:
+            return jsonify({"status": "error", "message": "Could not extract video link"}), 500
+            
+        direct_link = links[0] 
         
         return jsonify({
             "status": "success",
             "download_url": direct_link
         })
+        
+    except subprocess.CalledProcessError as e:
+        error_output = e.stderr.strip() if e.stderr else str(e)
+        return jsonify({"status": "error", "message": f"yt-dlp error: {error_output}"}), 500
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
