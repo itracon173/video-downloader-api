@@ -1,43 +1,41 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify
 import subprocess
-import os
 
 app = Flask(__name__)
 
 @app.route('/download', methods=['GET'])
-def download_video():
+def get_video_link():
     video_url = request.args.get('url')
     if not video_url:
         return jsonify({"status": "error", "message": "No URL provided"}), 400
 
-    # যদি ইউটিউব লিংক হয়, তবে রেন্ডার সার্ভার থেকে ব্লক খাওয়ার কারণে এটি হ্যান্ডেল করা
-    if "youtube.com" in video_url or "youtu.be" in video_url:
-        return jsonify({
-            "status": "error", 
-            "message": "YouTube downloads are temporarily restricted on cloud servers due to bot protection. Please try Facebook videos!"
-        }), 400
-
-    output_filename = "downloaded_video.mp4"
-    
     try:
-        # ফেসবুক বা অন্যান্য সাপোর্টেড সাইটের জন্য
+        # সার্ভারে ফাইল ডাউনলোড না করে শুধু ডিরেক্ট স্ট্রিম লিংক বের করার কমান্ড
         command = [
-            'yt-dlp',
+            'yt-dlp', 
             '--no-check-certificates',
             '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            '-f', 'best[ext=mp4]/best',
-            '-o', output_filename,
+            '-f', 'best[ext=mp4]/best', 
+            '-g', 
             video_url
         ]
         
-        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        # timeout যোগ করা হয়েছে যাতে সার্ভার ফ্রিজ হয়ে ক্র্যাশ না করে
+        result = subprocess.run(command, capture_output=True, text=True, check=True, timeout=15)
         
-        if os.path.exists(output_filename):
-            response = send_file(output_filename, as_attachment=True)
-            return response
-        else:
-            return jsonify({"status": "error", "message": "File could not be downloaded"}), 500
-
+        links = result.stdout.strip().split('\n')
+        if not links or not links[0]:
+            return jsonify({"status": "error", "message": "Could not extract video link"}), 500
+            
+        direct_link = links[0] 
+        
+        return jsonify({
+            "status": "success",
+            "download_url": direct_link
+        })
+        
+    except subprocess.TimeoutExpired:
+        return jsonify({"status": "error", "message": "Request timed out"}), 500
     except subprocess.CalledProcessError as e:
         error_output = e.stderr.strip() if e.stderr else str(e)
         return jsonify({"status": "error", "message": f"yt-dlp error: {error_output}"}), 500
