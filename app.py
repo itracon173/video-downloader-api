@@ -10,12 +10,11 @@ def get_video_link():
         return jsonify({"status": "error", "message": "No URL provided"}), 400
 
     try:
-        # ইউটিউব এবং ফেসবুক উভয়ের জন্য বেস্ট এমপিফোর ফরম্যাট লিংক বের করার কমান্ড
-   
+        # ইউটিউব এবং ফেসবুক উভয়ের জন্য ডিরেক্ট লিংকের বদলে সবচেয়ে সহজ ফরম্যাট
         command = [
             'yt-dlp', 
             '--no-check-certificates',
-            '-f', 'bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / b', 
+            '-f', '18/best[ext=mp4]/best',  # Format 18 হলো ইউটিউবের জন্য গ্যারান্টিড অডিও-ভিডিও যুক্ত 360p এমপিফোর ফাইল
             '-g', 
             video_url
         ]
